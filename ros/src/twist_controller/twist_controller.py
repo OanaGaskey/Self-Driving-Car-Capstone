@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import rospy
 from pid import PID
 from lowpass import LowPassFilter
@@ -66,4 +68,3 @@ class Controller(object):
             brake = abs(decel)*self.vehicle_mass*self.wheel_radius # Torque N*m
             
         return throttle, brake, steering 
-         
