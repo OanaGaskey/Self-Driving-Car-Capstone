@@ -40,6 +40,7 @@ class Bridge(object):
     def __init__(self, conf, server):
         rospy.init_node('styx_server')
         self.server = server
+        self.image_gap = 0
         self.vel = 0.
         self.yaw = None
         self.angular_vel = 0.
@@ -173,7 +174,7 @@ class Bridge(object):
 
     def publish_dbw_status(self, data):
         self.publishers['dbw_status'].publish(Bool(data))
-
+    '''
     def publish_camera(self, data):
         imgString = data["image"]
         image = PIL_Image.open(BytesIO(base64.b64decode(imgString)))
@@ -181,6 +182,19 @@ class Bridge(object):
 
         image_message = self.bridge.cv2_to_imgmsg(image_array, encoding="rgb8")
         self.publishers['image'].publish(image_message)
+   '''
+        
+    def publish_camera(self, data):
+        if self.image_gap >= 10:
+            self.image_gap = 0
+            imgString = data["image"]
+            image = PIL_Image.open(BytesIO(base64.b64decode(imgString)))
+            image_array = np.asarray(image)
+    
+            image_message = self.bridge.cv2_to_imgmsg(image_array, encoding="rgb8")
+            self.publishers['image'].publish(image_message)
+        else:
+            self.image_gap += 1
 
     def callback_steering(self, data):
         self.server('steer', data={'steering_angle': str(data.steering_wheel_angle_cmd)})
