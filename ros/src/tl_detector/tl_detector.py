@@ -10,6 +10,8 @@ from light_classification.tl_classifier import TLClassifier
 import tf
 import cv2
 import yaml
+import os
+import numpy
 from scipy.spatial import KDTree
 #import numpy as np
 
@@ -82,10 +84,16 @@ class TLDetector(object):
         cv2_img = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
         # Save your OpenCV2 image as a jpeg 
         time = msg.header.seq
-        cv2.imwrite(''+str(time)+'.jpeg', cv2_img)
+        path = '/home/workspace/CarND-Capstone/ros/src/tl_detector/rec_images'
+        cv2.imwrite(os.path.join(path , ''+str(time)+'.jpeg'), cv2_img)
+        #cv2.imwrite(''+str(time)+'.jpeg', cv2_img)
         
         light_wp, state = self.process_traffic_lights()
-
+       
+        file = open("labels.txt","a")
+        file.write('picture = ' + str(time) + ' ' + 'label = ' + str(state) + '\n') 
+        file.close()
+        
         '''
         Publish upcoming red lights at camera frequency.
         Each predicted state has to occur `STATE_COUNT_THRESHOLD` number
@@ -114,8 +122,8 @@ class TLDetector(object):
         Returns:
             int: index of the closest waypoint in self.waypoints
         """
-        closest_idx = self.waypoint_tree.query([x, y], 1)[1]
-
+        if self.waypoint_tree:
+            closest_idx = self.waypoint_tree.query([x, y], 1)[1]
         return closest_idx
 
     def get_light_state(self, light):
@@ -153,7 +161,7 @@ class TLDetector(object):
             car_wp_idx = self.get_closest_waypoint(self.pose.pose.position.x, self.pose.pose.position.y)
 
             #TODO find the closest visible traffic light (if one exists)
-            diff = len(self.waypoints.waypoints)
+            diff = 200 #len(self.waypoints.waypoints)
             for i, light in enumerate(self.lights):
                 # Get stop line waypoint index
                 line = stop_line_positions[i]
@@ -161,7 +169,7 @@ class TLDetector(object):
                 # Find closest stop line waypoint index
                 d = temp_wp_idx - car_wp_idx
 
-                if d >= 0 and d < diff:
+                if d >= -4 and d < diff:
                     diff = d
                     closest_light = light
                     line_wp_idx = temp_wp_idx
