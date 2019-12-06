@@ -1,10 +1,10 @@
 # Programming a Real Self-Driving Car
 
 ## System Integration Project
-
-![Carla](imgs/Carla.JPG)     
-
+  
 This is the project repo for the final project of the Udacity Self-Driving Car Nanodegree. The goal of the project is to fully implement with ROS the main modules of an autonomous vehicle: Perception, Planning and Control.
+
+![Carla](imgs/Carla.JPG)
 
 The project was designed using a simulator where the car drives around a highway test track with traffic lights. The simulator can be found [here](https://github.com/udacity/CarND-Capstone/releases) and starter code [here](https://github.com/udacity/CarND-Capstone) 
 
@@ -41,7 +41,7 @@ The submitted code is implemented in ROS. For this project we mainly use __rospy
 ### 1. Perception Module
 
 #### 1.1 Traffic Light Detection
-The Traffic Light Detection node is implemented in [./ros/src/tl_detector/tl_detector.py](./ros/src/waypoint_loader/tl_detector/tl_detector.py). The node subscribes to `/base_waypoints`, `/current_pose`, `/vehicle/traffic_lights` and `/image_color`. It's role is to find the upcoming red traffic light and to publish its ID to `/traffic_waypoint` topic. This is further used by the `waypoint_updater` node to plan for the vehicle to stop at the line associated with the red traffic light's position.
+The Traffic Light Detection node is implemented in [./ros/src/tl_detector/tl_detector.py](./ros/src/tl_detector/tl_detector.py). The node subscribes to `/base_waypoints`, `/current_pose`, `/vehicle/traffic_lights` and `/image_color`. It's role is to find the upcoming red traffic light and to publish its ID to `/traffic_waypoint` topic. This is further used by the `waypoint_updater` node to plan for the vehicle to stop at the line associated with the red traffic light's position.
 
 The `tl_detector` node gets the car's position and the traffic lights list to identify the closesest upcoming traffic light. The upcoming traffic light is taken into account only if it is within 200 waypoints. If a traffic light is within the specified distance, it's state is identified using the camera images and a trained CNN classifier.
 
