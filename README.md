@@ -1,8 +1,48 @@
-This is the project repo for the final project of the Udacity Self-Driving Car Nanodegree: Programming a Real Self-Driving Car. For more information about the project, see the project introduction [here](https://classroom.udacity.com/nanodegrees/nd013/parts/6047fe34-d93c-4f50-8336-b70ef10cb4b2/modules/e1a23b06-329a-4684-a717-ad476f0d8dff/lessons/462c933d-9f24-42d3-8bdc-a08a5fc866e4/concepts/5ab4b122-83e6-436d-850f-9f4d26627fd9).
+# Programming a Real Self-Driving Car
 
-Please use **one** of the two installation options, either native **or** docker installation.
+## System Integration Project
 
-### Native Installation
+[image1]: ./imgs/Carla.png "Image 1"     
+
+This is the project repo for the final project of the Udacity Self-Driving Car Nanodegree. The goal of the project is to fully implement with ROS the main modules of an autonomous vehicle: Perception, Planning and Control.
+
+The project was designed using a simulator where the car drives around a highway test track with traffic lights. The simulator can be found [here] (https://github.com/udacity/CarND-Capstone/releases) and starter code [here] (https://github.com/udacity/CarND-Capstone) 
+
+
+## The Team
+
+|           | Name                     |    E-Mail                        |      GitHub                                     |
+| --------- | -------------------------| -------------------------------- | :----------------------------------------------:|
+| Team Lead | Mark Draghicescu         |    markd38@hotmail.com           |      https://github.com/mark-draghicescu        |
+|           | Oana Gaskey              |    oana.gaskey@gmail.com         |      https://github.com/OanaGaskey              |
+|           | Ayomide Yusuf            |    mailayomide@gmail.com         |      https://github.com/ayomide-adekunle        |
+|           | Rajat Roy                |    rctbraj@gmail.com             |      https://github.com/Rajat-Roy               |
+
+
+## Overview
+
+[image1]: architecture
+The submitted code is implemented in ROS. For this project we mainly use __rospy__, which is a pure Python client library for ROS and enables Python programmers to interface with ROS Topics, Services and Parameters.
+
+## Code Architecture
+1. Perception Module
+     * 1.1 Traffic Light Detection Node
+     
+2. Planning Module
+      * 2.1 Waypoint Loader
+      * 2.2 Waypoint Updater
+      
+3. Control Module
+      * 3.1 DBW Node
+      * 3.2 Waypoint Follower
+
+### 1. Perception Module
+
+### 2. Planning Module
+
+### 3. Control Module
+
+## Native Installation
 
 * Be sure that your workstation is running Ubuntu 16.04 Xenial Xerus or Ubuntu 14.04 Trusty Tahir. [Ubuntu downloads can be found here](https://www.ubuntu.com/download/desktop).
 * If using a Virtual Machine to install Ubuntu, use the following configuration as minimum:
