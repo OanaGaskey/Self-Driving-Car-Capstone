@@ -2,11 +2,11 @@
 
 ## System Integration Project
 
-[image1]: ./imgs/Carla.png "Image 1"     
+![Carla](imgs/Carla.JPG)     
 
 This is the project repo for the final project of the Udacity Self-Driving Car Nanodegree. The goal of the project is to fully implement with ROS the main modules of an autonomous vehicle: Perception, Planning and Control.
 
-The project was designed using a simulator where the car drives around a highway test track with traffic lights. The simulator can be found [here] (https://github.com/udacity/CarND-Capstone/releases) and starter code [here] (https://github.com/udacity/CarND-Capstone) 
+The project was designed using a simulator where the car drives around a highway test track with traffic lights. The simulator can be found [here](https://github.com/udacity/CarND-Capstone/releases) and starter code [here](https://github.com/udacity/CarND-Capstone) 
 
 
 ## The Team
@@ -21,12 +21,13 @@ The project was designed using a simulator where the car drives around a highway
 
 ## Overview
 
-[image1]: architecture
+![System](imgs/SysArch.JPG)
 The submitted code is implemented in ROS. For this project we mainly use __rospy__, which is a pure Python client library for ROS and enables Python programmers to interface with ROS Topics, Services and Parameters.
 
 ## Code Architecture
 1. Perception Module
-     * 1.1 Traffic Light Detection Node
+     * 1.1 Traffic Light Detection
+     * 1.2 Traffic Light Classifier
      
 2. Planning Module
       * 2.1 Waypoint Loader
@@ -36,11 +37,104 @@ The submitted code is implemented in ROS. For this project we mainly use __rospy
       * 3.1 DBW Node
       * 3.2 Waypoint Follower
 
+
 ### 1. Perception Module
+
+#### 1.1 Traffic Light Detection
+The Traffic Light Detection node is implemented in [./ros/src/tl_detector/tl_detector.py](./ros/src/waypoint_loader/tl_detector/tl_detector.py). The node subscribes to `/base_waypoints`, `/current_pose`, `/vehicle/traffic_lights` and `/image_color`. It's role is to find the upcoming red traffic light and to publish its ID to `/traffic_waypoint` topic. This is further used by the `waypoint_updater` node to plan for the vehicle to stop at the line associated with the red traffic light's position.
+
+The `tl_detector` node gets the car's position and the traffic lights list to identify the closesest upcoming traffic light. The upcoming traffic light is taken into account only if it is within 200 waypoints. If a traffic light is within the specified distance, it's state is identified using the camera images and a trained CNN classifier.
+
+When a red light is consistently identified for `STATE_COUNT_THRESHOLD` consecutive cycles, the traffic light's waypoint id is published on `/traffic_waypoint` topic. If another state then red is identified, the `-1` value is published to the `/traffic_waypoint` topic which will be used to keep the vehicle going through the intersection. 
+
+#### 1.1 Traffic Light Classifier
+
+The Traffic Light Classifier is implemented in [./data/traffic_light_classifier_data/traffic_light_classifier.ipynb](./data/traffic_light_classifier_data/traffic_light_classifier.ipynb).
+
+This classifier was built to identify the traffic light using the whole image from the simulator. Images were collected from `/image_color` topic and labeled with the value `state` from `/vehicle/traffic_lights`topic
+
+```
+        # Convert your ROS Image message to OpenCV2
+        cv2_img = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
+        # Save your OpenCV2 image as a jpeg 
+        time = msg.header.seq
+        path = '/home/workspace/CarND-Capstone/ros/src/tl_detector/rec_images'
+        cv2.imwrite(os.path.join(path , ''+str(time)+'.jpeg'), cv2_img)
+        
+        light_wp, state = self.process_traffic_lights()
+       
+        file = open("labels.txt","a")
+        file.write('picture = ' + str(time) + ' ' + 'label = ' + str(state) + '\n') 
+        file.close()
+ 
+ ```
+With over 4000 labeled images that can be found in [./data/traffic_light_classifier_data/rec_images](./data/traffic_light_classifier_data/rec_images) a CNN network was trained.
+
+The model uses a 5 layer 2D convolution structure followed by a flatten and a 4 dense layer chain:
+```
+model = Sequential()
+#normalize data
+model.add(Lambda(lambda x: (x / 255.0) - 0.5, input_shape=(300,400,3)))
+
+model.add(Conv2D(24,(5,5), strides=(2,2), activation='relu'))
+model.add(Conv2D(36,(5,5), strides=(2,2), activation='relu'))
+model.add(Conv2D(48,(5,5), strides=(2,2), activation='relu'))
+model.add(Conv2D(64,(3,3), activation='relu'))
+model.add(Conv2D(64,(3,3), activation='relu'))
+model.add(Flatten())
+model.add(Dense(100, activation='relu'))
+model.add(Dense(50, activation='relu'))
+model.add(Dense(10, activation='relu'))
+model.add(Dense(5, activation='softmax'))
+
+model.compile(loss='categorical_crossentropy',optimizer='adam', metrics=['accuracy'])
+model.fit_generator(generator = data_generator(train_data),
+                    validation_data = data_generator(val_data),
+                    epochs = 10,
+                    steps_per_epoch  = math.ceil(len(train_data) / 128),
+                    validation_steps = math.ceil(len(val_data)   / 128)    )
+model.save('model.h5')
+model_json = model.to_json()
+with open("model.json", "w") as json_file:
+    json_file.write(model_json)
+print('Model saved')
+```
+The model was trined in 10 epochs and had a 97.14 percent accuracy.
+
+![Accu](imgs/Accu.JPG)
+
 
 ### 2. Planning Module
 
+#### 2.1 Waypoint Loader
+
+The Waypointer Loader node is implemented in [./ros/src/waypoint_loader/waypoint_loader.py](./ros/src/waypoint_loader/waypoint_loader.py). There the node gets initizialized and publishes to the `/base_waypoints` topic messages in the `Lane` format defined in [./ros/src/styx_msgs/msg/Lane.msg](./ros/src/styx_msgs/msg/Lane.msg).
+  
+The `waypoint_loader` node loads the programmed waypoints for the car to follow around the track and the default cruising speed (via the ROS parameter `~velocity`). The function `new_waypoint_loader()` is called which loads and publishes the waypoints with the default cruise velocity attached to them. 
+  
+The published `/base_waypoints` topic will be used by the `waypoint_updater` node, which will search and filter the relevant waypoints to follow ahead of the vehicle and update target velocities for the car to follow.
+
+#### 2.2 Waypoint Updater
+
+This [node](./ros/src/waypoint_updater/waypoint_updater.py) will publish waypoints from the car's current position to some `x` distance ahead. It will also consider traffic lights and set target speeds.
+
+The `waypoint_updater` node subscribes to `/current_pose`, `/base_waypoints`and `/traffic_waypoint` topics. The node publishes to `/final_waypoints` topic for the Control Module. `LOOKAHEAD_WPS` determines the number of waypoints ahead of the vehicle to be published for the Control Module. `MAX_DECEL` is used to calculate a smooth slowing down curve for the car when it reaches a red stoplight.
+
+`waypoint_updater`'s main role is to compute the behavior of the car for the next `LOOKAHEAD_WPS` waypoints. If there is nothing ahead, than the car shall drive at the already set constant velocity. If there is an obstacle coming up, like a red stoplight, the next waypoints are updated with smooth slowing down velocities to reach a stop at the line in front of the traffic light. 
+
+
 ### 3. Control Module
+
+#### 3.1 DBW Node
+
+The DBW Node is implemented in [./ros/src/twist_controller/dbw_node.py](./ros/src/twist_controller/dbw_node.py) and here is where the steering, throttle and braking signal commands get published to the car or simulator.
+
+The twist controller is implemented [here](./ros/src/twist_controller/twist_controller.py). The twist controller (including the imported [yaw controller](./ros/src/twist_controller/yaw_controller.py)) manages to set the desired linear and angular velocity with the help of a [PID controller](./ros/src/twist_controller/pid.py) and a [Low Pass Filter](./ros/src/twist_controller/lowpass.py) which outputs the necessary actuator signals. We subscribe to the desired linear and angular velocity via the `twist_cmd` topic which is published by the `Waypoint Follower` Node.
+
+#### 3.2 Waypoint Follower
+
+For the `Waypoint Follower` Node we make use of a package containing code from [Autoware](https://github.com/CPFL/Autoware) which subscribes to `/final_waypoints` and publishes target vehicle linear and angular velocities in the form of twist commands to the `/twist_cmd` topic. You can find the code [here](./ros/src/waypoint_follower/src/pure_pursuit.cpp). 
+
 
 ## Native Installation
 
