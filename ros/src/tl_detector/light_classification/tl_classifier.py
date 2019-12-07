@@ -28,7 +28,7 @@ class TLClassifier(object):
 
         # self.graph = tf.get_default_graph()
         self.light_buffer = np.array([0, 0, 0])
-        self.dist = 10
+        self.dist = 5
         self.light_state = TrafficLight.UNKNOWN
 
     def get_classification(self, image):
@@ -64,13 +64,11 @@ class TLClassifier(object):
             predicted_state = label
             self.light_buffer = mask_sum
             
-            self.dist=10
+            self.dist=5
 
         # predicted_state = label
 
         print(self.light_buffer)
-        print(self.dist)
-        print(str(mask_sum))
 
         if predicted_state == 0:
             print("RED")
@@ -87,32 +85,17 @@ class TLClassifier(object):
         
         return self.light_state
 
-    # def filter_redlight(self, image):
-    #     resized_image = cv2.resize(image, (400, 300))
-    #     img_hsv = cv2.cvtColor(resized_image, cv2.COLOR_BGR2HSV)
-
-    #     # lower mask (0-10)
-    #     lower_red = np.array([0,50,50])
-    #     upper_red = np.array([10,255,255])
-    #     mask = cv2.inRange(img_hsv, lower_red, upper_red)
-
-    #     # or your HSV image, which I *believe* is what you want
-    #     # output_hsv = img_hsv.copy()
-    #     # output_hsv[np.where(mask==0)] = 0
-    #     return mask
-
     def classify_tl(self, image):
-        img_hsv = cv2.cvtColor(image[0:300, 0:500], cv2.COLOR_BGR2HSV)
-            
-        # lower mask (0-10)
+        img_hsv = cv2.cvtColor(image[0:600, 0:500], cv2.COLOR_BGR2HSV)
+
         lower_red = np.array([0,50,50])
         upper_red = np.array([10,255,255])
-
-        lower_green = np.array([50,50,50])
-        upper_green = np.array([70,255,255])
-
+        
         lower_yellow = np.array([20,150,150])
         upper_yellow = np.array([30,255,255])
+
+        lower_green = np.array([50,100,100])
+        upper_green = np.array([70,255,255])
         
         mask = np.array([cv2.inRange(img_hsv, lower_red, upper_red),
                         cv2.inRange(img_hsv, lower_yellow, upper_yellow),
@@ -122,12 +105,4 @@ class TLClassifier(object):
         mask_sum = np.sum(np.sum(mask, axis=1), axis=1)
         label = np.argmax(mask_sum)
         
-        # if mask_sum[label] < 5:
-        #     label = 4
-            
-
-        # or your HSV image, which I *believe* is what you want
-    #     output_hsv = img_hsv.copy()
-    #     output_hsv[np.where(mask==0)] = 0
-
         return mask_sum, label
