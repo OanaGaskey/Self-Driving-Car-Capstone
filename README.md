@@ -8,6 +8,7 @@ This is the project repo for the final project of the Udacity Self-Driving Car N
 
 The project was designed using a simulator where the car drives around a highway test track with traffic lights. The simulator can be found [here](https://github.com/udacity/CarND-Capstone/releases) and starter code [here](https://github.com/udacity/CarND-Capstone) 
 
+For our submission, the logic was implemented and works well in the simulator. For the real world data, we will keep working after the deadline.
 
 ## The Team
 
@@ -49,7 +50,7 @@ When a red light is consistently identified for `STATE_COUNT_THRESHOLD` consecut
 
 #### 1.1 Traffic Light Classifier
 
-The Traffic Light Classifier is implemented in [./data/traffic_light_classifier_data/traffic_light_classifier.ipynb](./data/traffic_light_classifier_data/traffic_light_classifier.ipynb).
+The Traffic Light Classifier is implemented in [./data/traffic_light_classifier_data/traffic_light_classifier_augmented.ipynb](./data/traffic_light_classifier_data/traffic_light_classifier_augmented.ipynb).
 
 This classifier was built to identify the traffic light using the whole image from the simulator. Images were collected from `/image_color` topic and labeled with the value `state` from `/vehicle/traffic_lights`topic
 
@@ -101,8 +102,42 @@ print('Model saved')
 ```
 The model was trined in 10 epochs and had a 97.14 percent accuracy.
 
-![Accu](imgs/Accu.JPG)
+![Accuracy](imgs/Accuracy.JPG)
 
+Eventhough the accuracy of the model is high on the recorded and validation images, it did not perform very well in the simulaion. Its detection was unstable and not reliable.
+
+At this point we decided to give up on the trained classifier and use Computer Vision techniques to identify the traffic light color.
+
+Hue ranges for red, yellow and green were picked based on the images in the simulator. Masks are created to isolate the light using the logic below.
+```
+    # lower mask (0-10)
+    lower_red = np.array([0,50,50])
+    upper_red = np.array([10,255,255])
+    
+    lower_yellow = np.array([20,150,150])
+    upper_yellow = np.array([30,255,255])
+
+    lower_green = np.array([50,100,100])
+    upper_green = np.array([70,255,255])
+    
+    
+    mask = np.array([cv2.inRange(img_hsv, lower_red, upper_red),
+                     cv2.inRange(img_hsv, lower_yellow, upper_yellow),
+                     cv2.inRange(img_hsv, lower_green, upper_green)])
+    
+    
+    mask_sum = np.sum(np.sum(mask, axis=1), axis=1)
+    label = np.argmax(mask_sum)
+```
+
+Given these masks, only the pixels of the lighted areas are selected. The sum is computed on the mask to count how many pixels of a given color were selected.
+The position which has the highest number represents the color of the traffic light.
+
+In the HSV images below, red, yellow and green traffic light pictures can be seen with the effect of the masks.
+![Mask](imgs/Mask.JPG)
+
+
+With this approach, the simulation runs smoothly and the car correclty identifies the traffic lights.
 
 ### 2. Planning Module
 
