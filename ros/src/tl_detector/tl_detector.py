@@ -14,7 +14,7 @@ import yaml
 from scipy.spatial import KDTree
 #import numpy as np
 
-STATE_COUNT_THRESHOLD = 3 # was 3
+STATE_COUNT_THRESHOLD = 1 # was 3
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 class TLDetector(object):
     def __init__(self):
@@ -30,6 +30,7 @@ class TLDetector(object):
         self.waypoint_tree = None
 #         self.base_waypoints = None
         self.lights = []
+
 
         sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb) 
         sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
@@ -81,23 +82,10 @@ class TLDetector(object):
         """
         self.has_image = True
         self.camera_image = msg
-        print("Received an image!")
         
         # Convert your ROS Image message to OpenCV2
         cv2_img = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
-        # Save your OpenCV2 image as a jpeg 
-        time = msg.header.seq
-        # path = DIR_PATH + '/new_images'
-        # cv2.imwrite(os.path.join(path , ''+str(time)+'.jpeg'), cv2_img)
-        # print(os.path.join(path , ''+str(time)+'.jpeg'))
-        # cv2.imwrite(''+str(time)+'.jpeg', cv2_img)
-        
-        light_wp, state = self.process_traffic_lights()
-       
-        # file = open("labels.csv","a")
-        # file.write(str(time) +',' + str(state) + '\n') 
-        # file.close()
-        
+
         light_wp, state = self.process_traffic_lights()
 
         '''
@@ -119,7 +107,6 @@ class TLDetector(object):
         else:
             self.upcoming_red_light_pub.publish(Int32(self.last_wp))
         self.state_count += 1
-        print("last state: " + str(self.last_state))
 
     def get_closest_waypoint(self, x, y):
         """Identifies the closest path waypoint to the given position
@@ -149,7 +136,6 @@ class TLDetector(object):
 
         # Get classification
         state = self.light_classifier.get_classification(cv_image)
-        print("True: "+ str(light.state) + " Pred: " + str(self.last_state))
 
         return state
 
