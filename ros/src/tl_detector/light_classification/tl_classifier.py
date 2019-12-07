@@ -2,9 +2,8 @@ import os
 import cv2
 import math
 import numpy as np
-import tensorflow as tf
-#from keras.models import load_model
-from keras.models import model_from_json 
+# import tensorflow as tf
+# from keras.models import model_from_json 
 from styx_msgs.msg import TrafficLight
 
 
@@ -15,20 +14,21 @@ class TLClassifier(object):
     def __init__(self):
         # load classifier
         #self.model = load_model(DIR_PATH + '/model.h5')
-        json_file = open(DIR_PATH +'/model.json', 'r')
-        model_json = json_file.read()
+        # json_file = open(DIR_PATH +'/model.json', 'r')
+        # model_json = json_file.read()
         # config = tf.compat.v1.ConfigProto()
         # config.gpu_options.allow_growth = True
         # session = tf.compat.v1.InteractiveSession(config=config)
 
         # tf.compat.v1.keras.backend.set_session(session)
 
-        self.model = model_from_json(model_json)
-        self.model.load_weights(DIR_PATH + '/model.h5')
-        self.model._make_predict_function()
+        # self.model = model_from_json(model_json)
+        # self.model.load_weights(DIR_PATH + '/model.h5')
+        # self.model._make_predict_function()
 
-        self.graph = tf.get_default_graph()
-        
+        # self.graph = tf.get_default_graph()
+        self.light_buffer = np.array([0, 0, 0])
+        self.dist = 5
         self.light_state = TrafficLight.UNKNOWN
 
     def get_classification(self, image):
@@ -39,19 +39,36 @@ class TLClassifier(object):
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
         """
         #TODO implement light color prediction
-        hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-        resized_image = np.array([cv2.resize(hsv_image, (400, 300))])
+        
+        # resized_image = np.array([self.filter_redlight(image)])
+        # if np.sum(resized_image)>10000:
+        #     predicted_state=TrafficLight.RED
+        # else:
+        #     predicted_state=TrafficLight.UNKNOWN
         # resized_image = np.array([hsv_image])
 
         # if self.model:
         #     if len(resized_image)>0:
 
-        with self.graph.as_default():
-            model_predict = self.model.predict(resized_image)
-            predicted_state = int(model_predict.argmax(axis=-1))
-            print(str(predicted_state))
+        # with self.graph.as_default():
+        #     model_predict = self.model.predict(resized_image)
+        #     predicted_state = int(model_predict.argmax(axis=-1))
+        #     print(str(predicted_state))
 
-        # predicted_state = TrafficLight.UNKNOWN
+        mask_sum, label = self.classify_tl(image)
+        if self.dist > 0 :
+            self.light_buffer = np.add(self.light_buffer, mask_sum)
+            predicted_state = np.argmax(self.light_buffer)
+            self.dist += -1
+        else:
+            predicted_state = label
+            self.light_buffer = mask_sum
+            
+            self.dist=5
+
+        # predicted_state = label
+
+        print(self.light_buffer)
 
         if predicted_state == 0:
             print("RED")
@@ -67,3 +84,25 @@ class TLClassifier(object):
             self.light_state = TrafficLight.UNKNOWN
         
         return self.light_state
+
+    def classify_tl(self, image):
+        img_hsv = cv2.cvtColor(image[0:600, 0:500], cv2.COLOR_BGR2HSV)
+
+        lower_red = np.array([0,50,50])
+        upper_red = np.array([10,255,255])
+        
+        lower_yellow = np.array([20,150,150])
+        upper_yellow = np.array([30,255,255])
+
+        lower_green = np.array([50,100,100])
+        upper_green = np.array([70,255,255])
+        
+        mask = np.array([cv2.inRange(img_hsv, lower_red, upper_red),
+                        cv2.inRange(img_hsv, lower_yellow, upper_yellow),
+                        cv2.inRange(img_hsv, lower_green, upper_green)])
+        
+        
+        mask_sum = np.sum(np.sum(mask, axis=1), axis=1)
+        label = np.argmax(mask_sum)
+        
+        return mask_sum, label
