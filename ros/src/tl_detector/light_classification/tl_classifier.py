@@ -2,31 +2,10 @@ import os
 import cv2
 import math
 import numpy as np
-# import tensorflow as tf
-# from keras.models import model_from_json 
 from styx_msgs.msg import TrafficLight
-
-
-
-DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
 class TLClassifier(object):
     def __init__(self):
-        # load classifier
-        #self.model = load_model(DIR_PATH + '/model.h5')
-        # json_file = open(DIR_PATH +'/model.json', 'r')
-        # model_json = json_file.read()
-        # config = tf.compat.v1.ConfigProto()
-        # config.gpu_options.allow_growth = True
-        # session = tf.compat.v1.InteractiveSession(config=config)
-
-        # tf.compat.v1.keras.backend.set_session(session)
-
-        # self.model = model_from_json(model_json)
-        # self.model.load_weights(DIR_PATH + '/model.h5')
-        # self.model._make_predict_function()
-
-        # self.graph = tf.get_default_graph()
         self.light_buffer = np.array([0, 0, 0])
         self.dist = 5
         self.light_state = TrafficLight.UNKNOWN
@@ -39,22 +18,6 @@ class TLClassifier(object):
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
         """
         #TODO implement light color prediction
-        
-        # resized_image = np.array([self.filter_redlight(image)])
-        # if np.sum(resized_image)>10000:
-        #     predicted_state=TrafficLight.RED
-        # else:
-        #     predicted_state=TrafficLight.UNKNOWN
-        # resized_image = np.array([hsv_image])
-
-        # if self.model:
-        #     if len(resized_image)>0:
-
-        # with self.graph.as_default():
-        #     model_predict = self.model.predict(resized_image)
-        #     predicted_state = int(model_predict.argmax(axis=-1))
-        #     print(str(predicted_state))
-
         mask_sum, label = self.classify_tl(image)
         if self.dist > 0 :
             self.light_buffer = np.add(self.light_buffer, mask_sum)
@@ -65,9 +28,7 @@ class TLClassifier(object):
             self.light_buffer = mask_sum
             
             self.dist=5
-
-        # predicted_state = label
-
+            
         print(self.light_buffer)
 
         if predicted_state == 0:
