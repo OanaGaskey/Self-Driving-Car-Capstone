@@ -44,7 +44,7 @@ The submitted code is implemented in ROS. For this project we mainly use __rospy
 #### 1.1 Traffic Light Detection
 The Traffic Light Detection node is implemented in [./ros/src/tl_detector/tl_detector.py](./ros/src/tl_detector/tl_detector.py). The node subscribes to `/base_waypoints`, `/current_pose`, `/vehicle/traffic_lights` and `/image_color`. It's role is to find the upcoming red traffic light and to publish its ID to `/traffic_waypoint` topic. This is further used by the `waypoint_updater` node to plan for the vehicle to stop at the line associated with the red traffic light's position.
 
-The `tl_detector` node gets the car's position and the traffic lights list to identify the closesest upcoming traffic light. The upcoming traffic light is taken into account only if it is within 200 waypoints. If a traffic light is within the specified distance, it's state is identified using the camera images and a trained CNN classifier.
+The `tl_detector` node gets the car's position and the traffic lights list to identify the closesest upcoming traffic light. The upcoming traffic light is taken into account only if it is within 200 waypoints. If a traffic light is within the specified distance, it's state is identified using the Traffic Light Classifier based on camera images.
 
 When a red light is consistently identified for `STATE_COUNT_THRESHOLD` consecutive cycles, the traffic light's waypoint id is published on `/traffic_waypoint` topic. If another state then red is identified, the `-1` value is published to the `/traffic_waypoint` topic which will be used to keep the vehicle going through the intersection. 
 
@@ -100,7 +100,7 @@ with open("model.json", "w") as json_file:
     json_file.write(model_json)
 print('Model saved')
 ```
-The model was trined in 10 epochs and had a 97.14 percent accuracy.
+The model was trined in 10 epochs and had a 97.30 percent accuracy.
 
 ![Accuracy](imgs/Accuracy.JPG)
 
@@ -134,6 +134,7 @@ Given these masks, only the pixels of the lighted areas are selected. The sum is
 The position which has the highest number represents the color of the traffic light.
 
 In the HSV images below, red, yellow and green traffic light pictures can be seen with the effect of the masks.
+
 ![Mask](imgs/Mask.JPG)
 
 
